@@ -1,0 +1,36 @@
+# Trading System Configuration
+# ============================
+
+[app]
+name = "trading-system"
+environment = "development"
+
+[logging]
+level = "info"
+format = "pretty"
+# file = "logs/trading.log"
+
+[alpaca]
+api_key_env = "ALPACA_API_KEY"
+api_secret_env = "ALPACA_API_SECRET"
+base_url = "https://paper-api.alpaca.markets"
+paper = true
+
+[risk]
+max_position_pct = 10.0
+max_exposure_pct = 80.0
+daily_loss_limit_pct = 3.0
+max_drawdown_pct = 20.0
+
+# Position sizing: percent_equity with 2% per position
+[risk.position_sizing.percent_equity]
+percent = 2.0
+
+# Stop loss: Fixed 2% stop loss
+[risk.stop_loss.fixed_percent]
+percent = 2.0
+
+[backtest]
+default_capital = 100000.0
+commission = 0.0
+slippage_pct = 0.05

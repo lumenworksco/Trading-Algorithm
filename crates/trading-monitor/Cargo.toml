@@ -1,0 +1,18 @@
+[package]
+name = "trading-monitor"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Real-time monitoring and TUI dashboard"
+
+[dependencies]
+trading-core.workspace = true
+tokio.workspace = true
+serde.workspace = true
+chrono.workspace = true
+rust_decimal.workspace = true
+ratatui.workspace = true
+crossterm.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

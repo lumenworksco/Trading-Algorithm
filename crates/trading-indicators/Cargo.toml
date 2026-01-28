@@ -1,0 +1,19 @@
+[package]
+name = "trading-indicators"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Technical indicators with SIMD optimization"
+
+[dependencies]
+trading-core.workspace = true
+wide.workspace = true
+serde.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+
+[[bench]]
+name = "indicators"
+harness = false

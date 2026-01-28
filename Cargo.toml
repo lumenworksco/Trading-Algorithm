@@ -1,0 +1,131 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/trading-core",
+    "crates/trading-indicators",
+    "crates/trading-strategies",
+    "crates/trading-risk",
+    "crates/trading-data",
+    "crates/trading-broker",
+    "crates/trading-backtest",
+    "crates/trading-monitor",
+    "crates/trading-config",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT"
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1.43", features = ["full"] }
+tokio-stream = "0.1"
+futures = "0.3"
+async-trait = "0.1"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+
+# CLI
+clap = { version = "4.5", features = ["derive", "env"] }
+
+# Error handling
+thiserror = "2.0"
+anyhow = "1.0"
+
+# HTTP & WebSocket
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+tokio-tungstenite = { version = "0.24", features = ["rustls-tls-webpki-roots"] }
+
+# Alpaca API
+apca = "0.31"
+
+# Date/Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Numeric & Math
+rust_decimal = { version = "1.36", features = ["serde"] }
+rust_decimal_macros = "1.36"
+num-traits = "0.2"
+statrs = "0.17"
+
+# SIMD
+wide = "0.7"
+
+# Logging & Tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-appender = "0.2"
+
+# TUI Dashboard
+ratatui = "0.29"
+crossterm = "0.28"
+
+# Testing
+criterion = { version = "0.5", features = ["html_reports"] }
+
+# Data storage
+csv = "1.3"
+
+# UUID for order IDs
+uuid = { version = "1.11", features = ["v4", "serde"] }
+
+# Configuration
+config = "0.14"
+
+# Internal crates
+trading-core = { path = "crates/trading-core" }
+trading-indicators = { path = "crates/trading-indicators" }
+trading-strategies = { path = "crates/trading-strategies" }
+trading-risk = { path = "crates/trading-risk" }
+trading-data = { path = "crates/trading-data" }
+trading-broker = { path = "crates/trading-broker" }
+trading-backtest = { path = "crates/trading-backtest" }
+trading-monitor = { path = "crates/trading-monitor" }
+trading-config = { path = "crates/trading-config" }
+
+[package]
+name = "trading"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "High-performance algorithmic trading system"
+
+[[bin]]
+name = "trading"
+path = "src/main.rs"
+
+[dependencies]
+trading-core.workspace = true
+trading-indicators.workspace = true
+trading-strategies.workspace = true
+trading-risk.workspace = true
+trading-data.workspace = true
+trading-broker.workspace = true
+trading-backtest.workspace = true
+trading-monitor.workspace = true
+trading-config.workspace = true
+tokio.workspace = true
+clap.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+rust_decimal.workspace = true
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.bench]
+lto = "thin"
+codegen-units = 1

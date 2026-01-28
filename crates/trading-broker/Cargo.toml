@@ -1,0 +1,20 @@
+[package]
+name = "trading-broker"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Broker integrations"
+
+[dependencies]
+trading-core.workspace = true
+tokio.workspace = true
+async-trait.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+rust_decimal.workspace = true
+rust_decimal_macros.workspace = true
+uuid.workspace = true
+tracing.workspace = true
+thiserror.workspace = true

@@ -1,0 +1,17 @@
+[package]
+name = "trading-config"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Configuration management"
+
+[dependencies]
+trading-core.workspace = true
+trading-risk.workspace = true
+serde.workspace = true
+toml.workspace = true
+config.workspace = true
+thiserror.workspace = true
+rust_decimal.workspace = true
+rust_decimal_macros.workspace = true

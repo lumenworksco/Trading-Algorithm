@@ -1,0 +1,15 @@
+[package]
+name = "trading-risk"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Risk management for trading"
+
+[dependencies]
+trading-core.workspace = true
+trading-indicators.workspace = true
+serde.workspace = true
+rust_decimal.workspace = true
+rust_decimal_macros.workspace = true
+tracing.workspace = true
