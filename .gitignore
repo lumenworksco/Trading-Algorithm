@@ -33,8 +33,9 @@ logs/
 *.log
 
 # Data files (may contain sensitive trading data)
-data/
+# Note: data/*.csv is tracked for sample mock data included with the repo
 *.csv
+!data/*.csv
 !tests/fixtures/*.csv
 
 # Credentials and secrets
