@@ -41,6 +41,8 @@ pub struct BacktestStats {
     pub winning_trades: usize,
     /// Number of losing trades
     pub losing_trades: usize,
+    /// Number of breakeven trades
+    pub breakeven_trades: usize,
     /// Win rate percentage
     pub win_rate_pct: Decimal,
     /// Average profit per winning trade
@@ -75,6 +77,7 @@ impl BacktestStats {
             total_trades: 0,
             winning_trades: 0,
             losing_trades: 0,
+            breakeven_trades: 0,
             win_rate_pct: Decimal::ZERO,
             avg_win: Decimal::ZERO,
             avg_loss: Decimal::ZERO,
@@ -120,7 +123,6 @@ impl BacktestStats {
     /// Add a trade record.
     pub fn add_trade(&mut self, trade: TradeRecord) {
         self.trades.push(trade);
-        self.total_trades += 1;
     }
 
     /// Calculate final statistics.
@@ -141,18 +143,22 @@ impl BacktestStats {
             self.annualized_return_pct = Decimal::try_from(annualized).unwrap_or(Decimal::ZERO);
         }
 
-        // Calculate trade statistics
+        // Calculate trade statistics (only count round-trip trades with P&L)
         let mut total_profit = Decimal::ZERO;
         let mut total_loss = Decimal::ZERO;
 
         for trade in &self.trades {
             if let Some(pnl) = trade.pnl {
+                self.total_trades += 1;
                 if pnl > Decimal::ZERO {
                     self.winning_trades += 1;
                     total_profit += pnl;
                 } else if pnl < Decimal::ZERO {
                     self.losing_trades += 1;
                     total_loss += pnl.abs();
+                }
+                if pnl == Decimal::ZERO {
+                    self.breakeven_trades += 1;
                 }
             }
         }

@@ -46,6 +46,7 @@ impl BacktestReport {
         s.push_str(&format!("  Total Trades:        {}\n", self.stats.total_trades));
         s.push_str(&format!("  Winning Trades:      {}\n", self.stats.winning_trades));
         s.push_str(&format!("  Losing Trades:       {}\n", self.stats.losing_trades));
+        s.push_str(&format!("  Breakeven Trades:    {}\n", self.stats.breakeven_trades));
         s.push_str(&format!("  Win Rate:            {:.2}%\n", self.stats.win_rate_pct));
         s.push_str(&format!("  Avg Win:             ${:.2}\n", self.stats.avg_win));
         s.push_str(&format!("  Avg Loss:            ${:.2}\n", self.stats.avg_loss));
