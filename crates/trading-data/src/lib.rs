@@ -8,7 +8,7 @@ pub use cache::DataCache;
 
 use trading_core::types::{Bar, Timeframe};
 use trading_core::error::DataError;
-use chrono::{DateTime, Utc};
+
 
 /// Load bars from a CSV file.
 pub async fn load_csv(

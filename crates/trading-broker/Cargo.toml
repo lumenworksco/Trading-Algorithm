@@ -9,6 +9,7 @@ description = "Broker integrations"
 [dependencies]
 trading-core.workspace = true
 tokio.workspace = true
+tokio-stream.workspace = true
 async-trait.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -18,3 +19,5 @@ rust_decimal_macros.workspace = true
 uuid.workspace = true
 tracing.workspace = true
 thiserror.workspace = true
+reqwest.workspace = true
+futures.workspace = true

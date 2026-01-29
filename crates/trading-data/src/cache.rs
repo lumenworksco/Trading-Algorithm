@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 use trading_core::types::{Bar, Timeframe};
-use trading_core::error::DataError;
+
 
 /// Simple in-memory data cache.
 pub struct DataCache {

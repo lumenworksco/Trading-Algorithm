@@ -75,6 +75,19 @@ impl PaperBroker {
             }
         }
 
+        // Check buying power for buys
+        if order.side == Side::Buy {
+            let portfolio = self.portfolio.lock().unwrap();
+            let cost = fill_price * order.quantity;
+            if cost > portfolio.cash {
+                return Err(BrokerError::InsufficientFunds {
+                    required: cost,
+                    available: portfolio.cash,
+                });
+            }
+            drop(portfolio);
+        }
+
         // Calculate commission
         let commission = self.commission_per_share * order.quantity;
 
@@ -140,19 +153,8 @@ impl Broker for PaperBroker {
     }
 
     async fn submit_order(&self, request: OrderRequest) -> Result<Order, BrokerError> {
-        let mut portfolio = self.portfolio.lock().unwrap();
-
-        // Check buying power for buys
-        if request.side == Side::Buy {
-            let estimated_cost = request.quantity * request.limit_price.unwrap_or(dec!(0));
-            if estimated_cost > portfolio.buying_power && request.order_type == OrderType::Market {
-                return Err(BrokerError::InsufficientFunds {
-                    required: estimated_cost,
-                    available: portfolio.buying_power,
-                });
-            }
-        }
-        drop(portfolio);
+        // Note: buying power check for market orders happens in execute_at_price
+        // since we don't know the fill price at submission time.
 
         let order = Order::from_request(&request);
         let order_id = order.id;

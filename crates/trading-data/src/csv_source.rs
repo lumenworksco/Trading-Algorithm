@@ -1,6 +1,6 @@
 //! CSV data source.
 
-use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
+use chrono::{NaiveDate, NaiveDateTime};
 use csv::ReaderBuilder;
 use serde::Deserialize;
 use std::path::Path;
@@ -82,6 +82,8 @@ impl CsvDataSource {
         let formats = [
             "%Y-%m-%d",
             "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%dT%H:%M:%S",
+            "%Y-%m-%dT%H:%M:%SZ",
             "%Y/%m/%d",
             "%m/%d/%Y",
             "%d-%m-%Y",
