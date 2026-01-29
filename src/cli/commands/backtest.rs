@@ -12,7 +12,7 @@ use tracing::info;
 
 use crate::cli::BacktestArgs;
 
-pub async fn run(args: BacktestArgs, config_path: &Path) -> Result<()> {
+pub async fn run(args: BacktestArgs, _config_path: &Path) -> Result<()> {
     info!("Starting backtest for strategy: {}", args.strategy);
 
     // Create strategy
@@ -23,9 +23,15 @@ pub async fn run(args: BacktestArgs, config_path: &Path) -> Result<()> {
 
     // Load data
     let data = if let Some(data_path) = &args.data {
+        if !data_path.exists() {
+            anyhow::bail!(
+                "Data path '{}' does not exist. Provide a CSV file or directory containing CSV files (e.g. --data ./data)",
+                data_path.display()
+            );
+        }
         load_data_from_csv(data_path, &args.symbols).await?
     } else {
-        anyhow::bail!("Please provide a data file with --data");
+        anyhow::bail!("Please provide a data file or directory with --data (e.g. --data ./data)");
     };
 
     // Create backtest config
@@ -77,15 +83,24 @@ async fn load_data_from_csv(
             .await?;
         data.insert(symbol, bars);
     } else {
-        // If path is a directory, look for files named {symbol}.csv
+        // If path is a directory, look for files named {symbol}.csv or {symbol}_daily.csv
         for symbol in symbols {
-            let file_path = path.join(format!("{}.csv", symbol));
-            if file_path.exists() {
-                let source = CsvDataSource::new(file_path.to_str().unwrap())?;
-                let bars = source
-                    .load_all(symbol, trading_core::types::Timeframe::Daily)
-                    .await?;
-                data.insert(symbol.clone(), bars);
+            let lower = symbol.to_lowercase();
+            let candidates = [
+                path.join(format!("{}.csv", symbol)),
+                path.join(format!("{}.csv", lower)),
+                path.join(format!("{}_daily.csv", symbol)),
+                path.join(format!("{}_daily.csv", lower)),
+            ];
+            for file_path in &candidates {
+                if file_path.exists() {
+                    let source = CsvDataSource::new(file_path.to_str().unwrap())?;
+                    let bars = source
+                        .load_all(symbol, trading_core::types::Timeframe::Daily)
+                        .await?;
+                    data.insert(symbol.clone(), bars);
+                    break;
+                }
             }
         }
     }

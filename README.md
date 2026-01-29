@@ -13,8 +13,8 @@ A high-performance algorithmic trading system written in Rust, featuring multipl
 - **SIMD-Optimized Indicators** - High-performance technical indicators using SIMD instructions
 - **Backtesting Engine** - Event-driven simulation with detailed performance metrics
 - **Risk Management** - Position sizing, stop-loss, and portfolio limits
-- **Paper Trading** - Simulated trading for strategy testing
-- **Live Trading** - Alpaca API integration (coming soon)
+- **Paper Trading** - Real-time paper trading via Alpaca API
+- **Live Trading** - Alpaca API integration for live markets *(planned — not yet implemented)*
 - **TUI Dashboard** - Real-time monitoring with terminal UI
 
 ## Installation
@@ -39,19 +39,29 @@ cargo build --release
 
 ## Quick Start
 
-### List Available Strategies
+### 1. List Available Strategies
 
 ```bash
 ./target/release/trading strategies
 ```
 
-### Validate Configuration
+### 2. Run a Backtest
+
+The repository includes mock historical data in the `data/` directory for AAPL, GOOGL, MSFT, SPY, QQQ, and TSLA.
+
+**Single symbol** (pass a CSV file directly):
 
 ```bash
-./target/release/trading validate-config
+./target/release/trading backtest \
+  --strategy ma_crossover \
+  --symbols AAPL \
+  --start 2023-01-01 \
+  --end 2024-01-01 \
+  --capital 100000 \
+  --data ./data/aapl_daily.csv
 ```
 
-### Run a Backtest
+**Multiple symbols** (pass the data directory — it automatically finds `{symbol}_daily.csv` files):
 
 ```bash
 ./target/release/trading backtest \
@@ -60,10 +70,34 @@ cargo build --release
   --start 2023-01-01 \
   --end 2024-01-01 \
   --capital 100000 \
-  --data path/to/historical_data.csv
+  --data ./data
 ```
 
-### Paper Trading
+**Save results as JSON:**
+
+```bash
+./target/release/trading backtest \
+  --strategy rsi \
+  --symbols AAPL \
+  --start 2023-01-01 \
+  --end 2024-01-01 \
+  --data ./data \
+  --output json \
+  --save results.json
+```
+
+### 3. Paper Trading
+
+Paper trading connects to the [Alpaca](https://alpaca.markets/) paper trading API. Add your API credentials to `config/default.toml`:
+
+```toml
+[alpaca]
+api_key_env = "YOUR_ALPACA_API_KEY"
+api_secret_env = "YOUR_ALPACA_API_SECRET"
+paper = true
+```
+
+Then run:
 
 ```bash
 ./target/release/trading paper \
@@ -73,17 +107,35 @@ cargo build --release
   --timeframe 5m
 ```
 
+Alternatively, you can set environment variables instead of editing the config file:
+
+```bash
+export ALPACA_API_KEY="your_key"
+export ALPACA_API_SECRET="your_secret"
+```
+
+### 4. Validate Configuration
+
+```bash
+./target/release/trading validate-config
+```
+
 ## Configuration
 
 Configuration is stored in `config/default.toml`. You can customize:
 
+- **Alpaca API** - API credentials for paper/live trading
 - **Risk Management** - Position sizing, stop-loss methods, exposure limits
-- **Alpaca API** - API credentials and endpoints
 - **Backtest Settings** - Default capital, commission, slippage
 
 Example configuration:
 
 ```toml
+[alpaca]
+api_key_env = "YOUR_API_KEY"
+api_secret_env = "YOUR_API_SECRET"
+paper = true
+
 [risk]
 max_position_pct = 10.0
 max_exposure_pct = 80.0
@@ -103,6 +155,7 @@ trading-system/
 ├── Cargo.toml              # Workspace configuration
 ├── config/
 │   └── default.toml        # Default configuration
+├── data/                   # Mock historical data (CSV)
 ├── crates/
 │   ├── trading-core/       # Core types and traits
 │   ├── trading-indicators/ # Technical indicators (SIMD)
@@ -123,7 +176,7 @@ trading-system/
 | Command | Description |
 |---------|-------------|
 | `backtest` | Run backtesting simulation |
-| `live` | Start live trading |
+| `live` | Start live trading *(not yet implemented)* |
 | `paper` | Start paper trading |
 | `strategies` | List available strategies |
 | `validate-config` | Validate configuration file |
@@ -207,27 +260,52 @@ cargo fmt
 cargo clippy --workspace
 ```
 
-## Data Format
+## Data
+
+### Included Mock Data
+
+The `data/` directory contains mock historical daily data (260 trading days, 2023-01-02 to 2024-01-01) for:
+
+| File | Symbol |
+|------|--------|
+| `aapl_daily.csv` | Apple |
+| `googl_daily.csv` | Alphabet |
+| `msft_daily.csv` | Microsoft |
+| `spy_daily.csv` | S&P 500 ETF |
+| `qqq_daily.csv` | Nasdaq 100 ETF |
+| `tsla_daily.csv` | Tesla |
+| `multi_symbol_daily.csv` | All symbols combined |
+
+### CSV Format
 
 The backtest engine accepts CSV files with the following columns:
 
 ```csv
 timestamp,open,high,low,close,volume
 2023-01-03T09:30:00,130.28,130.90,129.89,130.15,1234567
-2023-01-03T09:31:00,130.15,130.45,130.00,130.30,987654
+2023-01-04T09:30:00,130.15,130.45,130.00,130.30,987654
 ```
 
 Supported timestamp formats:
 - ISO 8601: `2023-01-03T09:30:00`
-- Unix milliseconds: `1672746600000`
+- Date-time: `2023-01-03 09:30:00`
 - Date only: `2023-01-03`
+- Unix milliseconds: `1672746600000`
+- Unix seconds: `1672746600`
+
+### Data Directory Convention
+
+When passing `--data ./data` (a directory), the engine looks for files matching:
+- `{SYMBOL}_daily.csv` (e.g. `aapl_daily.csv` for `--symbols AAPL`)
+- `{SYMBOL}.csv`
+- Case-insensitive matching
 
 ## Environment Variables
 
 | Variable | Description |
 |----------|-------------|
-| `ALPACA_API_KEY` | Alpaca API key |
-| `ALPACA_API_SECRET` | Alpaca API secret |
+| `ALPACA_API_KEY` | Alpaca API key (alternative to config file) |
+| `ALPACA_API_SECRET` | Alpaca API secret (alternative to config file) |
 | `RUST_LOG` | Log level override |
 
 ## Performance
