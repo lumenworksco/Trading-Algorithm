@@ -58,6 +58,12 @@ pub enum StrategyError {
 /// Broker-specific errors.
 #[derive(Error, Debug)]
 pub enum BrokerError {
+    #[error("Configuration error: {0}")]
+    Configuration(String),
+
+    #[error("Connection error: {0}")]
+    Connection(String),
+
     #[error("Authentication failed: {0}")]
     AuthenticationError(String),
 

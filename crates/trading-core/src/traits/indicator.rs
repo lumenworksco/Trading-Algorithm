@@ -99,6 +99,7 @@ pub trait MultiOutputIndicator: Send + Sync {
 }
 
 /// OHLCV indicator that uses all bar data (not just close).
+#[allow(dead_code)]
 pub trait OhlcvIndicator: Send + Sync {
     /// The output type of the indicator.
     type Output;
