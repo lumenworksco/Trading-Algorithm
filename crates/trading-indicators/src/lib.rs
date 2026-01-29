@@ -8,11 +8,11 @@
 //! Many indicators have SIMD-optimized implementations for improved performance
 //! during backtesting over large datasets.
 
-pub mod moving_average;
 pub mod momentum;
-pub mod volatility;
+pub mod moving_average;
 pub mod simd;
+pub mod volatility;
 
-pub use moving_average::{Sma, Ema, Wma};
-pub use momentum::{Rsi, Macd, MacdOutput, Stochastic, StochasticOutput};
+pub use momentum::{Macd, MacdOutput, Rsi, Stochastic, StochasticOutput};
+pub use moving_average::{Ema, Sma, Wma};
 pub use volatility::{Atr, BollingerBands, BollingerOutput, StdDev};

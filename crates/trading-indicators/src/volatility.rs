@@ -1,7 +1,7 @@
 //! Volatility indicators.
 
-use trading_core::traits::{Indicator, MultiOutputIndicator};
 use serde::{Deserialize, Serialize};
+use trading_core::traits::{Indicator, MultiOutputIndicator};
 
 /// Standard Deviation.
 #[derive(Debug, Clone)]
@@ -65,12 +65,7 @@ impl Atr {
     }
 
     /// Calculate ATR from OHLC data.
-    pub fn calculate_ohlc(
-        &self,
-        high: &[f64],
-        low: &[f64],
-        close: &[f64],
-    ) -> Vec<f64> {
+    pub fn calculate_ohlc(&self, high: &[f64], low: &[f64], close: &[f64]) -> Vec<f64> {
         let len = high.len().min(low.len()).min(close.len());
         if len < self.period + 1 {
             return vec![];
@@ -193,7 +188,10 @@ impl BollingerBands {
     /// Create Bollinger Bands with custom parameters.
     pub fn with_params(period: usize, std_dev_multiplier: f64) -> Self {
         assert!(period > 1, "Period must be greater than 1");
-        assert!(std_dev_multiplier > 0.0, "Std dev multiplier must be positive");
+        assert!(
+            std_dev_multiplier > 0.0,
+            "Std dev multiplier must be positive"
+        );
         Self {
             period,
             std_dev_multiplier,
@@ -288,12 +286,7 @@ impl KeltnerChannels {
     }
 
     /// Calculate from OHLC data.
-    pub fn calculate_ohlc(
-        &self,
-        high: &[f64],
-        low: &[f64],
-        close: &[f64],
-    ) -> Vec<BollingerOutput> {
+    pub fn calculate_ohlc(&self, high: &[f64], low: &[f64], close: &[f64]) -> Vec<BollingerOutput> {
         let atr = Atr::new(self.atr_period);
         let atr_values = atr.calculate_ohlc(high, low, close);
 
@@ -305,7 +298,8 @@ impl KeltnerChannels {
         let multiplier = 2.0 / (self.ema_period as f64 + 1.0);
         let mut ema_values = Vec::with_capacity(close.len() - self.ema_period + 1);
 
-        let initial_sma: f64 = close[..self.ema_period].iter().sum::<f64>() / self.ema_period as f64;
+        let initial_sma: f64 =
+            close[..self.ema_period].iter().sum::<f64>() / self.ema_period as f64;
         ema_values.push(initial_sma);
 
         let mut ema = initial_sma;
@@ -315,11 +309,7 @@ impl KeltnerChannels {
         }
 
         // Align EMA and ATR
-        let offset = if self.atr_period > self.ema_period {
-            self.atr_period - self.ema_period
-        } else {
-            0
-        };
+        let offset = self.atr_period.saturating_sub(self.ema_period);
 
         let ema_slice = if offset > 0 && offset < ema_values.len() {
             &ema_values[offset..]
@@ -410,7 +400,9 @@ mod tests {
     #[test]
     fn test_bollinger_bands() {
         let bb = BollingerBands::new();
-        let data: Vec<f64> = (0..30).map(|i| 100.0 + (i as f64 * 0.1).sin() * 5.0).collect();
+        let data: Vec<f64> = (0..30)
+            .map(|i| 100.0 + (i as f64 * 0.1).sin() * 5.0)
+            .collect();
 
         let result = bb.calculate(&data);
         assert!(!result.is_empty());

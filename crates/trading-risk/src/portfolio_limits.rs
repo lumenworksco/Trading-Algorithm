@@ -48,13 +48,13 @@ pub struct PortfolioLimits {
 impl Default for PortfolioLimits {
     fn default() -> Self {
         Self {
-            max_position_pct: dec!(10),       // 10% max per position
-            max_exposure_pct: dec!(80),       // 80% max invested
+            max_position_pct: dec!(10), // 10% max per position
+            max_exposure_pct: dec!(80), // 80% max invested
             max_positions: 10,
-            daily_loss_limit_pct: dec!(3),    // Stop if down 3% today
-            max_drawdown_pct: dec!(20),       // Stop if 20% drawdown
+            daily_loss_limit_pct: dec!(3), // Stop if down 3% today
+            max_drawdown_pct: dec!(20),    // Stop if 20% drawdown
             min_cash: dec!(1000),
-            max_concentration_pct: dec!(25),  // No position > 25% of portfolio
+            max_concentration_pct: dec!(25), // No position > 25% of portfolio
         }
     }
 }
@@ -118,7 +118,7 @@ impl PortfolioLimits {
             }
             return LimitCheck::Reduced {
                 max_size: max_allowed,
-                reason: format!("Limited by minimum cash requirement"),
+                reason: "Limited by minimum cash requirement".to_string(),
             };
         }
 
@@ -128,7 +128,8 @@ impl PortfolioLimits {
         let exposure_pct = (new_exposure / portfolio.equity) * dec!(100);
 
         if exposure_pct > self.max_exposure_pct {
-            let max_additional = (portfolio.equity * self.max_exposure_pct / dec!(100)) - current_exposure;
+            let max_additional =
+                (portfolio.equity * self.max_exposure_pct / dec!(100)) - current_exposure;
             if max_additional <= Decimal::ZERO {
                 return LimitCheck::Blocked {
                     reason: format!(
@@ -150,7 +151,10 @@ impl PortfolioLimits {
             let max_position = portfolio.equity * self.max_position_pct / dec!(100);
             return LimitCheck::Reduced {
                 max_size: max_position,
-                reason: format!("Limited by max position size ({:.2}%)", self.max_position_pct),
+                reason: format!(
+                    "Limited by max position size ({:.2}%)",
+                    self.max_position_pct
+                ),
             };
         }
 
@@ -159,7 +163,10 @@ impl PortfolioLimits {
             let max_position = portfolio.equity * self.max_concentration_pct / dec!(100);
             return LimitCheck::Reduced {
                 max_size: max_position,
-                reason: format!("Limited by max concentration ({:.2}%)", self.max_concentration_pct),
+                reason: format!(
+                    "Limited by max concentration ({:.2}%)",
+                    self.max_concentration_pct
+                ),
             };
         }
 
@@ -202,11 +209,8 @@ mod tests {
         portfolio.equity = equity;
         // Simulate positions by adjusting market value
         for i in 0..positions {
-            let mut pos = trading_core::types::Position::new(
-                format!("SYM{}", i),
-                dec!(10),
-                dec!(100),
-            );
+            let mut pos =
+                trading_core::types::Position::new(format!("SYM{}", i), dec!(10), dec!(100));
             pos.market_value = dec!(1000);
             portfolio.positions.insert(format!("SYM{}", i), pos);
         }
@@ -224,8 +228,10 @@ mod tests {
 
     #[test]
     fn test_max_positions_blocked() {
-        let mut limits = PortfolioLimits::default();
-        limits.max_positions = 3;
+        let limits = PortfolioLimits {
+            max_positions: 3,
+            ..Default::default()
+        };
         let portfolio = create_portfolio(dec!(100000), dec!(50000), 3);
 
         let check = limits.check_new_position(&portfolio, dec!(5000), Decimal::ZERO);
@@ -244,8 +250,10 @@ mod tests {
 
     #[test]
     fn test_position_size_reduced() {
-        let mut limits = PortfolioLimits::default();
-        limits.max_position_pct = dec!(5); // 5% max
+        let limits = PortfolioLimits {
+            max_position_pct: dec!(5), // 5% max
+            ..Default::default()
+        };
         let portfolio = create_portfolio(dec!(100000), dec!(100000), 0);
 
         // Trying to buy 10% position

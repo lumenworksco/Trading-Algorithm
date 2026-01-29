@@ -3,11 +3,11 @@
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
-use trading_core::types::{OrderRequest, Portfolio, Signal, Side};
+use trading_core::types::{OrderRequest, Portfolio, Side, Signal};
 
 use crate::{
-    PortfolioLimits, PositionSizer, PositionSizingMethod,
-    StopLossManager, StopLossMethod, LimitCheck,
+    LimitCheck, PortfolioLimits, PositionSizer, PositionSizingMethod, StopLossManager,
+    StopLossMethod,
 };
 
 /// Risk management configuration.
@@ -57,7 +57,10 @@ pub enum RiskDecision {
 
 impl RiskDecision {
     pub fn is_approved(&self) -> bool {
-        matches!(self, RiskDecision::Approved { .. } | RiskDecision::Modified { .. })
+        matches!(
+            self,
+            RiskDecision::Approved { .. } | RiskDecision::Modified { .. }
+        )
     }
 
     pub fn order(&self) -> Option<&OrderRequest> {
@@ -134,15 +137,14 @@ impl RiskManager {
         };
 
         // Calculate stop-loss price
-        let stop_loss_price = self.stop_loss_manager.calculate_stop_price(current_price, side);
+        let stop_loss_price = self
+            .stop_loss_manager
+            .calculate_stop_price(current_price, side);
 
         // Calculate position size
-        let quantity = self.position_sizer.calculate(
-            portfolio,
-            signal,
-            current_price,
-            stop_loss_price,
-        );
+        let quantity =
+            self.position_sizer
+                .calculate(portfolio, signal, current_price, stop_loss_price);
 
         if quantity <= Decimal::ZERO {
             return RiskDecision::Rejected {
@@ -154,16 +156,13 @@ impl RiskManager {
         let position_value = quantity * current_price;
 
         // Check portfolio limits
-        let limit_check = self.config.limits.check_new_position(
-            portfolio,
-            position_value,
-            self.daily_pnl,
-        );
+        let limit_check =
+            self.config
+                .limits
+                .check_new_position(portfolio, position_value, self.daily_pnl);
 
         match limit_check {
-            LimitCheck::Blocked { reason } => {
-                RiskDecision::Rejected { reason }
-            }
+            LimitCheck::Blocked { reason } => RiskDecision::Rejected { reason },
 
             LimitCheck::Reduced { max_size, reason } => {
                 let reduced_quantity = (max_size / current_price).floor();
@@ -195,7 +194,9 @@ impl RiskManager {
 
     /// Check if trading should be halted.
     pub fn should_halt(&self, portfolio: &Portfolio) -> Option<String> {
-        self.config.limits.should_halt_trading(portfolio, self.daily_pnl)
+        self.config
+            .limits
+            .should_halt_trading(portfolio, self.daily_pnl)
     }
 
     /// Get the current configuration.
@@ -238,7 +239,11 @@ mod tests {
         let decision = manager.evaluate_signal(&portfolio, &signal, dec!(100));
         assert!(decision.is_approved());
 
-        if let RiskDecision::Approved { order, stop_loss_price } = decision {
+        if let RiskDecision::Approved {
+            order,
+            stop_loss_price,
+        } = decision
+        {
             assert_eq!(order.symbol, "TEST");
             assert_eq!(order.side, Side::Buy);
             assert!(order.quantity > Decimal::ZERO);

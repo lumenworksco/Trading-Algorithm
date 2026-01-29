@@ -10,8 +10,8 @@ use trading_core::traits::{Broker, Strategy};
 use trading_core::types::{Bar, BarSeries, Side, SignalType, Timeframe};
 use trading_risk::{RiskConfig, RiskManager};
 
-use crate::statistics::{BacktestStats, TradeRecord};
 use crate::report::BacktestReport;
+use crate::statistics::{BacktestStats, TradeRecord};
 
 /// Backtest configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -101,65 +101,73 @@ impl BacktestEngine {
                     if skip {
                         // Don't process this signal, but continue processing the bar
                     } else {
-                    // Evaluate with risk manager
-                    let current_price = Decimal::try_from(bar.close).unwrap_or(dec!(0));
-                    let portfolio = broker.get_account().await.unwrap();
-                    let decision = risk_manager.evaluate_signal(&portfolio, &signal, current_price);
+                        // Evaluate with risk manager
+                        let current_price = Decimal::try_from(bar.close).unwrap_or(dec!(0));
+                        let portfolio = broker.get_account().await.unwrap();
+                        let decision =
+                            risk_manager.evaluate_signal(&portfolio, &signal, current_price);
 
-                    if let Some(order_request) = decision.order() {
-                        // Submit and execute order
-                        if let Ok(order) = broker.submit_order(order_request.clone()).await {
-                            if let Ok(filled) = broker.execute_at_price(order.id, current_price) {
-                                let fill_price = filled.filled_avg_price.unwrap_or(current_price);
-                                let fill_qty = filled.filled_quantity;
+                        if let Some(order_request) = decision.order() {
+                            // Submit and execute order
+                            if let Ok(order) = broker.submit_order(order_request.clone()).await {
+                                if let Ok(filled) = broker.execute_at_price(order.id, current_price)
+                                {
+                                    let fill_price =
+                                        filled.filled_avg_price.unwrap_or(current_price);
+                                    let fill_qty = filled.filled_quantity;
 
-                                // Calculate P&L for closing trades
-                                let pnl = match order_request.side {
-                                    Side::Buy => {
-                                        // Opening a long position
-                                        let entry = open_positions.entry(symbol.clone()).or_insert((Decimal::ZERO, Decimal::ZERO));
-                                        // Weighted average entry price
-                                        if entry.1 + fill_qty > Decimal::ZERO {
-                                            entry.0 = (entry.0 * entry.1 + fill_price * fill_qty) / (entry.1 + fill_qty);
+                                    // Calculate P&L for closing trades
+                                    let pnl = match order_request.side {
+                                        Side::Buy => {
+                                            // Opening a long position
+                                            let entry = open_positions
+                                                .entry(symbol.clone())
+                                                .or_insert((Decimal::ZERO, Decimal::ZERO));
+                                            // Weighted average entry price
+                                            if entry.1 + fill_qty > Decimal::ZERO {
+                                                entry.0 = (entry.0 * entry.1
+                                                    + fill_price * fill_qty)
+                                                    / (entry.1 + fill_qty);
+                                            }
+                                            entry.1 += fill_qty;
+                                            None
                                         }
-                                        entry.1 += fill_qty;
-                                        None
-                                    }
-                                    Side::Sell => {
-                                        // Closing (or reducing) a long position
-                                        if let Some(entry) = open_positions.get_mut(&symbol) {
-                                            if entry.1 > Decimal::ZERO {
-                                                let close_qty = fill_qty.min(entry.1);
-                                                let trade_pnl = (fill_price - entry.0) * close_qty;
-                                                entry.1 -= close_qty;
-                                                if entry.1 <= Decimal::ZERO {
-                                                    open_positions.remove(&symbol);
+                                        Side::Sell => {
+                                            // Closing (or reducing) a long position
+                                            if let Some(entry) = open_positions.get_mut(&symbol) {
+                                                if entry.1 > Decimal::ZERO {
+                                                    let close_qty = fill_qty.min(entry.1);
+                                                    let trade_pnl =
+                                                        (fill_price - entry.0) * close_qty;
+                                                    entry.1 -= close_qty;
+                                                    if entry.1 <= Decimal::ZERO {
+                                                        open_positions.remove(&symbol);
+                                                    }
+                                                    Some(trade_pnl)
+                                                } else {
+                                                    None
                                                 }
-                                                Some(trade_pnl)
                                             } else {
                                                 None
                                             }
-                                        } else {
-                                            None
                                         }
-                                    }
-                                };
+                                    };
 
-                                // Record trade
-                                let trade = TradeRecord {
-                                    symbol: symbol.clone(),
-                                    side: order_request.side,
-                                    quantity: fill_qty,
-                                    price: fill_price,
-                                    timestamp: DateTime::from_timestamp_millis(timestamp)
-                                        .unwrap_or_else(|| Utc::now()),
-                                    signal_type: signal.signal_type,
-                                    pnl,
-                                };
-                                stats.add_trade(trade);
+                                    // Record trade
+                                    let trade = TradeRecord {
+                                        symbol: symbol.clone(),
+                                        side: order_request.side,
+                                        quantity: fill_qty,
+                                        price: fill_price,
+                                        timestamp: DateTime::from_timestamp_millis(timestamp)
+                                            .unwrap_or_else(Utc::now),
+                                        signal_type: signal.signal_type,
+                                        pnl,
+                                    };
+                                    stats.add_trade(trade);
+                                }
                             }
                         }
-                    }
                     } // else (not skipped)
                 }
             }
@@ -192,7 +200,7 @@ impl BacktestEngine {
                             quantity: *quantity,
                             price: close_price,
                             timestamp: DateTime::from_timestamp_millis(last_bar.timestamp)
-                                .unwrap_or_else(|| Utc::now()),
+                                .unwrap_or_else(Utc::now),
                             signal_type: SignalType::CloseLong,
                             pnl: Some(pnl),
                         };

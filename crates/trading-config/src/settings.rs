@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use trading_risk::{PositionSizingMethod, StopLossMethod};
 
 /// Main application configuration.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AppConfig {
     #[serde(default)]
     pub app: AppSettings,
@@ -17,18 +17,6 @@ pub struct AppConfig {
     pub risk: RiskSettings,
     #[serde(default)]
     pub backtest: BacktestSettings,
-}
-
-impl Default for AppConfig {
-    fn default() -> Self {
-        Self {
-            app: AppSettings::default(),
-            logging: LoggingConfig::default(),
-            alpaca: AlpacaConfig::default(),
-            risk: RiskSettings::default(),
-            backtest: BacktestSettings::default(),
-        }
-    }
 }
 
 /// General app settings.

@@ -69,10 +69,11 @@ impl std::fmt::Display for OrderType {
 }
 
 /// Time in force for orders.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum TimeInForce {
     /// Valid for the trading day only
+    #[default]
     Day,
     /// Good til canceled
     #[serde(rename = "gtc")]
@@ -89,12 +90,6 @@ pub enum TimeInForce {
     /// At market close
     #[serde(rename = "cls")]
     CLS,
-}
-
-impl Default for TimeInForce {
-    fn default() -> Self {
-        TimeInForce::Day
-    }
 }
 
 /// Order status.
@@ -388,10 +383,7 @@ impl Order {
     /// Add a fill to the order.
     pub fn add_fill(&mut self, fill: Fill) {
         let total_qty = self.filled_quantity + fill.quantity;
-        let total_value = self
-            .filled_avg_price
-            .unwrap_or(Decimal::ZERO)
-            * self.filled_quantity
+        let total_value = self.filled_avg_price.unwrap_or(Decimal::ZERO) * self.filled_quantity
             + fill.price * fill.quantity;
 
         self.filled_avg_price = Some(total_value / total_qty);

@@ -1,14 +1,13 @@
 //! Data sources for trading.
 
-mod csv_source;
 mod cache;
+mod csv_source;
 
-pub use csv_source::CsvDataSource;
 pub use cache::DataCache;
+pub use csv_source::CsvDataSource;
 
-use trading_core::types::{Bar, Timeframe};
 use trading_core::error::DataError;
-
+use trading_core::types::{Bar, Timeframe};
 
 /// Load bars from a CSV file.
 pub async fn load_csv(

@@ -105,10 +105,10 @@ impl Dashboard {
             .direction(Direction::Vertical)
             .margin(1)
             .constraints([
-                Constraint::Length(3),  // Header
-                Constraint::Length(5),  // Stats
-                Constraint::Min(10),    // Positions
-                Constraint::Length(8),  // Messages
+                Constraint::Length(3), // Header
+                Constraint::Length(5), // Stats
+                Constraint::Min(10),   // Positions
+                Constraint::Length(8), // Messages
             ])
             .split(frame.area());
 
@@ -119,14 +119,15 @@ impl Dashboard {
     }
 
     fn render_header(&self, frame: &mut Frame, area: Rect, state: &DashboardState) {
-        let header = Paragraph::new(vec![
-            Line::from(vec![
-                Span::styled("Trading Dashboard", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw(" | "),
-                Span::styled(&state.strategy_name, Style::default().fg(Color::Cyan)),
-                Span::raw(" | Press 'q' to quit"),
-            ]),
-        ])
+        let header = Paragraph::new(vec![Line::from(vec![
+            Span::styled(
+                "Trading Dashboard",
+                Style::default().add_modifier(Modifier::BOLD),
+            ),
+            Span::raw(" | "),
+            Span::styled(&state.strategy_name, Style::default().fg(Color::Cyan)),
+            Span::raw(" | Press 'q' to quit"),
+        ])])
         .block(Block::default().borders(Borders::ALL).title("System"));
         frame.render_widget(header, area);
     }
@@ -143,16 +144,24 @@ impl Dashboard {
                 Span::raw("Equity: "),
                 Span::styled(
                     format!("${:.2}", state.portfolio.equity),
-                    Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
+                    Style::default()
+                        .fg(Color::White)
+                        .add_modifier(Modifier::BOLD),
                 ),
                 Span::raw("  |  Cash: "),
                 Span::styled(format!("${:.2}", state.portfolio.cash), Style::default()),
                 Span::raw("  |  Daily P&L: "),
-                Span::styled(format!("${:.2}", state.daily_pnl), Style::default().fg(pnl_color)),
+                Span::styled(
+                    format!("${:.2}", state.daily_pnl),
+                    Style::default().fg(pnl_color),
+                ),
             ]),
             Line::from(vec![
                 Span::raw("Positions: "),
-                Span::styled(format!("{}", state.portfolio.position_count()), Style::default()),
+                Span::styled(
+                    format!("{}", state.portfolio.position_count()),
+                    Style::default(),
+                ),
                 Span::raw("  |  Signals: "),
                 Span::styled(format!("{}", state.signals_today), Style::default()),
                 Span::raw("  |  Trades: "),
@@ -214,8 +223,8 @@ impl Dashboard {
             .map(|m| Line::from(m.as_str()))
             .collect();
 
-        let paragraph = Paragraph::new(messages)
-            .block(Block::default().borders(Borders::ALL).title("Log"));
+        let paragraph =
+            Paragraph::new(messages).block(Block::default().borders(Borders::ALL).title("Log"));
         frame.render_widget(paragraph, area);
     }
 }

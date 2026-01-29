@@ -45,9 +45,14 @@ impl PaperBroker {
     }
 
     /// Simulate order execution at a given price.
-    pub fn execute_at_price(&self, order_id: Uuid, market_price: Decimal) -> Result<Order, BrokerError> {
+    pub fn execute_at_price(
+        &self,
+        order_id: Uuid,
+        market_price: Decimal,
+    ) -> Result<Order, BrokerError> {
         let mut orders = self.orders.lock().unwrap();
-        let order = orders.get_mut(&order_id)
+        let order = orders
+            .get_mut(&order_id)
             .ok_or_else(|| BrokerError::OrderNotFound(order_id.to_string()))?;
 
         if order.status.is_terminal() {
@@ -119,7 +124,9 @@ impl PaperBroker {
         }
 
         // Update position
-        let position = portfolio.positions.entry(order.symbol.clone())
+        let position = portfolio
+            .positions
+            .entry(order.symbol.clone())
             .or_insert_with(|| Position::new(&order.symbol, Decimal::ZERO, Decimal::ZERO));
 
         position.apply_fill(order.side, order.quantity, fill_price);
@@ -170,11 +177,14 @@ impl Broker for PaperBroker {
             .map_err(|_| BrokerError::OrderNotFound(order_id.to_string()))?;
 
         let mut orders = self.orders.lock().unwrap();
-        let order = orders.get_mut(&uuid)
+        let order = orders
+            .get_mut(&uuid)
             .ok_or_else(|| BrokerError::OrderNotFound(order_id.to_string()))?;
 
         if order.status.is_terminal() {
-            return Err(BrokerError::OrderRejected("Order already terminal".to_string()));
+            return Err(BrokerError::OrderRejected(
+                "Order already terminal".to_string(),
+            ));
         }
 
         order.status = OrderStatus::Canceled;
@@ -188,14 +198,16 @@ impl Broker for PaperBroker {
             .map_err(|_| BrokerError::OrderNotFound(order_id.to_string()))?;
 
         let orders = self.orders.lock().unwrap();
-        orders.get(&uuid)
+        orders
+            .get(&uuid)
             .cloned()
             .ok_or_else(|| BrokerError::OrderNotFound(order_id.to_string()))
     }
 
     async fn get_open_orders(&self) -> Result<Vec<Order>, BrokerError> {
         let orders = self.orders.lock().unwrap();
-        Ok(orders.values()
+        Ok(orders
+            .values()
             .filter(|o| o.status.is_active())
             .cloned()
             .collect())
@@ -214,9 +226,15 @@ impl Broker for PaperBroker {
     async fn close_position(&self, symbol: &str) -> Result<Order, BrokerError> {
         let (side, quantity) = {
             let portfolio = self.portfolio.lock().unwrap();
-            let position = portfolio.positions.get(symbol)
+            let position = portfolio
+                .positions
+                .get(symbol)
                 .ok_or_else(|| BrokerError::PositionNotFound(symbol.to_string()))?;
-            let side = if position.is_long() { Side::Sell } else { Side::Buy };
+            let side = if position.is_long() {
+                Side::Sell
+            } else {
+                Side::Buy
+            };
             let quantity = position.quantity.abs();
             (side, quantity)
         }; // MutexGuard dropped here before await
@@ -242,7 +260,8 @@ impl Broker for PaperBroker {
     async fn cancel_all_orders(&self) -> Result<(), BrokerError> {
         let order_ids: Vec<String> = {
             let orders = self.orders.lock().unwrap();
-            orders.values()
+            orders
+                .values()
                 .filter(|o| o.status.is_active())
                 .map(|o| o.id.to_string())
                 .collect()

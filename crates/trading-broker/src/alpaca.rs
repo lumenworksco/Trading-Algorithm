@@ -2,17 +2,17 @@
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use reqwest::{Client, header};
+use reqwest::{header, Client};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use tracing::{debug, info};
 use trading_core::error::BrokerError;
 use trading_core::traits::Broker;
 use trading_core::types::{
     Bar, Fill, Order, OrderRequest, OrderStatus, OrderType, Portfolio, Position, Side,
 };
-use tracing::{debug, info};
 use uuid::Uuid;
 
 /// Alpaca API configuration.
@@ -26,7 +26,11 @@ pub struct AlpacaConfig {
 impl AlpacaConfig {
     /// Create config directly with key and secret.
     pub fn new(api_key: String, api_secret: String, paper: bool) -> Self {
-        Self { api_key, api_secret, paper }
+        Self {
+            api_key,
+            api_secret,
+            paper,
+        }
     }
 
     /// Load from environment variables.
@@ -248,7 +252,8 @@ impl AlpacaBroker {
             params.push(("limit", l.to_string()));
         }
 
-        let resp = self.client
+        let resp = self
+            .client
             .get(&url)
             .query(&params)
             .send()
@@ -261,25 +266,35 @@ impl AlpacaBroker {
             return Err(BrokerError::ApiError(format!("{}: {}", status, text)));
         }
 
-        let data: AlpacaSingleBarsResponse = resp.json().await
+        let data: AlpacaSingleBarsResponse = resp
+            .json()
+            .await
             .map_err(|e| BrokerError::ApiError(e.to_string()))?;
 
-        let bars = data.bars.iter().map(|b| {
-            let ts = DateTime::parse_from_rfc3339(&b.t)
-                .map(|dt| dt.timestamp_millis())
-                .unwrap_or(0);
-            Bar::new(ts, b.o, b.h, b.l, b.c, b.v as f64)
-        }).collect();
+        let bars = data
+            .bars
+            .iter()
+            .map(|b| {
+                let ts = DateTime::parse_from_rfc3339(&b.t)
+                    .map(|dt| dt.timestamp_millis())
+                    .unwrap_or(0);
+                Bar::new(ts, b.o, b.h, b.l, b.c, b.v as f64)
+            })
+            .collect();
 
         Ok(bars)
     }
 
     /// Get latest quotes for symbols.
-    pub async fn get_latest_quotes(&self, symbols: &[String]) -> Result<HashMap<String, Decimal>, BrokerError> {
+    pub async fn get_latest_quotes(
+        &self,
+        symbols: &[String],
+    ) -> Result<HashMap<String, Decimal>, BrokerError> {
         let url = format!("{}/v2/stocks/quotes/latest", self.config.data_url());
         let symbols_param = symbols.join(",");
 
-        let resp = self.client
+        let resp = self
+            .client
             .get(&url)
             .query(&[("symbols", &symbols_param), ("feed", &"iex".to_string())])
             .send()
@@ -292,14 +307,20 @@ impl AlpacaBroker {
             return Err(BrokerError::ApiError(format!("{}: {}", status, text)));
         }
 
-        let data: AlpacaLatestQuotesResponse = resp.json().await
+        let data: AlpacaLatestQuotesResponse = resp
+            .json()
+            .await
             .map_err(|e| BrokerError::ApiError(e.to_string()))?;
 
-        let prices: HashMap<String, Decimal> = data.quotes
+        let prices: HashMap<String, Decimal> = data
+            .quotes
             .into_iter()
             .map(|(symbol, quote)| {
                 let mid_price = (quote.ap + quote.bp) / 2.0;
-                (symbol, Decimal::from_f64_retain(mid_price).unwrap_or(dec!(0)))
+                (
+                    symbol,
+                    Decimal::from_f64_retain(mid_price).unwrap_or(dec!(0)),
+                )
             })
             .collect();
 
@@ -312,7 +333,12 @@ impl AlpacaBroker {
         let side = match order.side.as_str() {
             "buy" => Side::Buy,
             "sell" => Side::Sell,
-            _ => return Err(BrokerError::ApiError(format!("Unknown side: {}", order.side))),
+            _ => {
+                return Err(BrokerError::ApiError(format!(
+                    "Unknown side: {}",
+                    order.side
+                )))
+            }
         };
 
         let order_type = match order.order_type.as_str() {
@@ -340,11 +366,15 @@ impl AlpacaBroker {
             .map(|dt| dt.with_timezone(&Utc))
             .unwrap_or_else(|_| Utc::now());
 
-        let filled_at = order.filled_at.as_ref()
+        let filled_at = order
+            .filled_at
+            .as_ref()
             .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
             .map(|dt| dt.with_timezone(&Utc));
 
-        let canceled_at = order.canceled_at.as_ref()
+        let canceled_at = order
+            .canceled_at
+            .as_ref()
             .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
             .map(|dt| dt.with_timezone(&Utc));
 
@@ -419,7 +449,11 @@ impl Broker for AlpacaBroker {
     async fn get_account(&self) -> Result<Portfolio, BrokerError> {
         let url = format!("{}/v2/account", self.config.base_url());
 
-        let resp = self.client.get(&url).send().await
+        let resp = self
+            .client
+            .get(&url)
+            .send()
+            .await
             .map_err(|e| BrokerError::Connection(e.to_string()))?;
 
         if !resp.status().is_success() {
@@ -428,7 +462,9 @@ impl Broker for AlpacaBroker {
             return Err(BrokerError::ApiError(format!("{}: {}", status, text)));
         }
 
-        let account: AlpacaAccount = resp.json().await
+        let account: AlpacaAccount = resp
+            .json()
+            .await
             .map_err(|e| BrokerError::ApiError(e.to_string()))?;
 
         let cash: Decimal = account.cash.parse().unwrap_or(dec!(0));
@@ -456,7 +492,10 @@ impl Broker for AlpacaBroker {
     async fn submit_order(&self, request: OrderRequest) -> Result<Order, BrokerError> {
         let url = format!("{}/v2/orders", self.config.base_url());
 
-        let side = match request.side { Side::Buy => "buy", Side::Sell => "sell" };
+        let side = match request.side {
+            Side::Buy => "buy",
+            Side::Sell => "sell",
+        };
         let order_type = match request.order_type {
             OrderType::Market => "market",
             OrderType::Limit => "limit",
@@ -477,7 +516,12 @@ impl Broker for AlpacaBroker {
 
         debug!("Submitting order: {:?}", create_req);
 
-        let resp = self.client.post(&url).json(&create_req).send().await
+        let resp = self
+            .client
+            .post(&url)
+            .json(&create_req)
+            .send()
+            .await
             .map_err(|e| BrokerError::Connection(e.to_string()))?;
 
         if !resp.status().is_success() {
@@ -486,16 +530,25 @@ impl Broker for AlpacaBroker {
             return Err(BrokerError::OrderRejected(format!("{}: {}", status, text)));
         }
 
-        let order: AlpacaOrder = resp.json().await
+        let order: AlpacaOrder = resp
+            .json()
+            .await
             .map_err(|e| BrokerError::ApiError(e.to_string()))?;
 
-        info!("Order submitted: {} {} {} @ {:?}", order.side, order.qty, order.symbol, order.limit_price);
+        info!(
+            "Order submitted: {} {} {} @ {:?}",
+            order.side, order.qty, order.symbol, order.limit_price
+        );
         self.parse_order(order)
     }
 
     async fn cancel_order(&self, order_id: &str) -> Result<(), BrokerError> {
         let url = format!("{}/v2/orders/{}", self.config.base_url(), order_id);
-        let resp = self.client.delete(&url).send().await
+        let resp = self
+            .client
+            .delete(&url)
+            .send()
+            .await
             .map_err(|e| BrokerError::Connection(e.to_string()))?;
 
         if !resp.status().is_success() {
@@ -509,7 +562,11 @@ impl Broker for AlpacaBroker {
 
     async fn get_order(&self, order_id: &str) -> Result<Order, BrokerError> {
         let url = format!("{}/v2/orders/{}", self.config.base_url(), order_id);
-        let resp = self.client.get(&url).send().await
+        let resp = self
+            .client
+            .get(&url)
+            .send()
+            .await
             .map_err(|e| BrokerError::Connection(e.to_string()))?;
 
         if !resp.status().is_success() {
@@ -518,14 +575,21 @@ impl Broker for AlpacaBroker {
             return Err(BrokerError::OrderNotFound(format!("{}: {}", status, text)));
         }
 
-        let order: AlpacaOrder = resp.json().await
+        let order: AlpacaOrder = resp
+            .json()
+            .await
             .map_err(|e| BrokerError::ApiError(e.to_string()))?;
         self.parse_order(order)
     }
 
     async fn get_open_orders(&self) -> Result<Vec<Order>, BrokerError> {
         let url = format!("{}/v2/orders", self.config.base_url());
-        let resp = self.client.get(&url).query(&[("status", "open")]).send().await
+        let resp = self
+            .client
+            .get(&url)
+            .query(&[("status", "open")])
+            .send()
+            .await
             .map_err(|e| BrokerError::Connection(e.to_string()))?;
 
         if !resp.status().is_success() {
@@ -534,14 +598,20 @@ impl Broker for AlpacaBroker {
             return Err(BrokerError::ApiError(format!("{}: {}", status, text)));
         }
 
-        let orders: Vec<AlpacaOrder> = resp.json().await
+        let orders: Vec<AlpacaOrder> = resp
+            .json()
+            .await
             .map_err(|e| BrokerError::ApiError(e.to_string()))?;
         orders.into_iter().map(|o| self.parse_order(o)).collect()
     }
 
     async fn get_positions(&self) -> Result<Vec<Position>, BrokerError> {
         let url = format!("{}/v2/positions", self.config.base_url());
-        let resp = self.client.get(&url).send().await
+        let resp = self
+            .client
+            .get(&url)
+            .send()
+            .await
             .map_err(|e| BrokerError::Connection(e.to_string()))?;
 
         if !resp.status().is_success() {
@@ -550,14 +620,23 @@ impl Broker for AlpacaBroker {
             return Err(BrokerError::ApiError(format!("{}: {}", status, text)));
         }
 
-        let positions: Vec<AlpacaPosition> = resp.json().await
+        let positions: Vec<AlpacaPosition> = resp
+            .json()
+            .await
             .map_err(|e| BrokerError::ApiError(e.to_string()))?;
-        Ok(positions.into_iter().map(|p| self.parse_position(p)).collect())
+        Ok(positions
+            .into_iter()
+            .map(|p| self.parse_position(p))
+            .collect())
     }
 
     async fn get_position(&self, symbol: &str) -> Result<Option<Position>, BrokerError> {
         let url = format!("{}/v2/positions/{}", self.config.base_url(), symbol);
-        let resp = self.client.get(&url).send().await
+        let resp = self
+            .client
+            .get(&url)
+            .send()
+            .await
             .map_err(|e| BrokerError::Connection(e.to_string()))?;
 
         if resp.status() == reqwest::StatusCode::NOT_FOUND {
@@ -570,14 +649,20 @@ impl Broker for AlpacaBroker {
             return Err(BrokerError::ApiError(format!("{}: {}", status, text)));
         }
 
-        let p: AlpacaPosition = resp.json().await
+        let p: AlpacaPosition = resp
+            .json()
+            .await
             .map_err(|e| BrokerError::ApiError(e.to_string()))?;
         Ok(Some(self.parse_position(p)))
     }
 
     async fn close_position(&self, symbol: &str) -> Result<Order, BrokerError> {
         let url = format!("{}/v2/positions/{}", self.config.base_url(), symbol);
-        let resp = self.client.delete(&url).send().await
+        let resp = self
+            .client
+            .delete(&url)
+            .send()
+            .await
             .map_err(|e| BrokerError::Connection(e.to_string()))?;
 
         if !resp.status().is_success() {
@@ -586,7 +671,9 @@ impl Broker for AlpacaBroker {
             return Err(BrokerError::ApiError(format!("{}: {}", status, text)));
         }
 
-        let order: AlpacaOrder = resp.json().await
+        let order: AlpacaOrder = resp
+            .json()
+            .await
             .map_err(|e| BrokerError::ApiError(e.to_string()))?;
         info!("Position closed: {}", symbol);
         self.parse_order(order)
@@ -594,7 +681,11 @@ impl Broker for AlpacaBroker {
 
     async fn close_all_positions(&self) -> Result<Vec<Order>, BrokerError> {
         let url = format!("{}/v2/positions", self.config.base_url());
-        let resp = self.client.delete(&url).send().await
+        let resp = self
+            .client
+            .delete(&url)
+            .send()
+            .await
             .map_err(|e| BrokerError::Connection(e.to_string()))?;
 
         if !resp.status().is_success() {
@@ -603,7 +694,9 @@ impl Broker for AlpacaBroker {
             return Err(BrokerError::ApiError(format!("{}: {}", status, text)));
         }
 
-        let orders: Vec<AlpacaOrder> = resp.json().await
+        let orders: Vec<AlpacaOrder> = resp
+            .json()
+            .await
             .map_err(|e| BrokerError::ApiError(e.to_string()))?;
         info!("All positions closed");
         orders.into_iter().map(|o| self.parse_order(o)).collect()
@@ -611,7 +704,11 @@ impl Broker for AlpacaBroker {
 
     async fn cancel_all_orders(&self) -> Result<(), BrokerError> {
         let url = format!("{}/v2/orders", self.config.base_url());
-        let resp = self.client.delete(&url).send().await
+        let resp = self
+            .client
+            .delete(&url)
+            .send()
+            .await
             .map_err(|e| BrokerError::Connection(e.to_string()))?;
 
         if !resp.status().is_success() {
@@ -625,7 +722,11 @@ impl Broker for AlpacaBroker {
 
     async fn is_market_open(&self) -> Result<bool, BrokerError> {
         let url = format!("{}/v2/clock", self.config.base_url());
-        let resp = self.client.get(&url).send().await
+        let resp = self
+            .client
+            .get(&url)
+            .send()
+            .await
             .map_err(|e| BrokerError::Connection(e.to_string()))?;
 
         if !resp.status().is_success() {
@@ -634,12 +735,18 @@ impl Broker for AlpacaBroker {
             return Err(BrokerError::ApiError(format!("{}: {}", status, text)));
         }
 
-        let clock: AlpacaClock = resp.json().await
+        let clock: AlpacaClock = resp
+            .json()
+            .await
             .map_err(|e| BrokerError::ApiError(e.to_string()))?;
         Ok(clock.is_open)
     }
 
     fn name(&self) -> &str {
-        if self.config.paper { "Alpaca Paper" } else { "Alpaca Live" }
+        if self.config.paper {
+            "Alpaca Paper"
+        } else {
+            "Alpaca Live"
+        }
     }
 }

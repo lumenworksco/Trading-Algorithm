@@ -6,10 +6,10 @@
 //! - Trading signals
 //! - Core traits for strategies, indicators, brokers, and data sources
 
-pub mod types;
-pub mod traits;
 pub mod error;
+pub mod traits;
+pub mod types;
 
 pub use error::{TradingError, TradingResult};
-pub use types::*;
 pub use traits::*;
+pub use types::*;

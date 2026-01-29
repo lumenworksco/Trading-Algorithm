@@ -1,7 +1,7 @@
 //! Momentum indicators.
 
-use trading_core::traits::{Indicator, MultiOutputIndicator};
 use serde::{Deserialize, Serialize};
+use trading_core::traits::{Indicator, MultiOutputIndicator};
 
 /// Relative Strength Index (RSI).
 ///
@@ -264,10 +264,7 @@ impl Stochastic {
                 .iter()
                 .cloned()
                 .fold(f64::NEG_INFINITY, f64::max);
-            let lowest = low[start..=i]
-                .iter()
-                .cloned()
-                .fold(f64::INFINITY, f64::min);
+            let lowest = low[start..=i].iter().cloned().fold(f64::INFINITY, f64::min);
 
             let range = highest - lowest;
             let k = if range == 0.0 {

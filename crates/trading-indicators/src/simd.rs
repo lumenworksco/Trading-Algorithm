@@ -70,12 +70,7 @@ pub fn rsi_simd(data: &[f64], period: usize) -> Vec<f64> {
     for i in 0..chunks {
         let idx = i * 4;
         let prev = f64x4::new([data[idx], data[idx + 1], data[idx + 2], data[idx + 3]]);
-        let curr = f64x4::new([
-            data[idx + 1],
-            data[idx + 2],
-            data[idx + 3],
-            data[idx + 4],
-        ]);
+        let curr = f64x4::new([data[idx + 1], data[idx + 2], data[idx + 3], data[idx + 4]]);
 
         let diff = curr - prev;
         let zero = f64x4::splat(0.0);
@@ -163,8 +158,8 @@ pub fn std_dev_simd(data: &[f64], period: usize) -> Vec<f64> {
         }
 
         // Handle remaining elements
-        for j in (chunks * 4)..period {
-            let diff = window[j] - mean;
+        for val in window.iter().take(period).skip(chunks * 4) {
+            let diff = val - mean;
             sum_sq += diff * diff;
         }
 
@@ -203,8 +198,8 @@ pub fn variance_simd(data: &[f64], period: usize) -> Vec<f64> {
             sum_sq += sq.reduce_add();
         }
 
-        for j in (chunks * 4)..period {
-            let diff = window[j] - mean;
+        for val in window.iter().take(period).skip(chunks * 4) {
+            let diff = val - mean;
             sum_sq += diff * diff;
         }
 

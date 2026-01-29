@@ -6,7 +6,7 @@
 use serde::{Deserialize, Serialize};
 use trading_core::{
     error::StrategyError,
-    traits::{Strategy, StrategyConfig, StrategyState, MultiOutputIndicator},
+    traits::{MultiOutputIndicator, Strategy, StrategyConfig, StrategyState},
     types::{BarSeries, Signal, SignalMetadata, SignalStrength, SignalType},
 };
 use trading_indicators::BollingerBands;
@@ -182,7 +182,9 @@ impl Strategy for MeanReversionStrategy {
                             ..Default::default()
                         },
                     })
-                } else if self.config.allow_short && bb.percent_b >= 1.0 - self.config.entry_threshold {
+                } else if self.config.allow_short
+                    && bb.percent_b >= 1.0 - self.config.entry_threshold
+                {
                     // Overbought - potential short entry
                     self.position = PositionState::Short;
                     self.signals_generated += 1;
@@ -337,8 +339,10 @@ mod tests {
 
     #[test]
     fn test_config_validation() {
-        let mut config = MeanReversionConfig::default();
-        config.symbols = vec!["AAPL".to_string()];
+        let mut config = MeanReversionConfig {
+            symbols: vec!["AAPL".to_string()],
+            ..Default::default()
+        };
         assert!(config.validate().is_ok());
 
         config.bb_period = 1;

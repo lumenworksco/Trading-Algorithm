@@ -10,7 +10,12 @@ use trading_core::types::{Bar, Timeframe};
 /// CSV record format.
 #[derive(Debug, Deserialize)]
 struct CsvRecord {
-    #[serde(alias = "Date", alias = "date", alias = "timestamp", alias = "Timestamp")]
+    #[serde(
+        alias = "Date",
+        alias = "date",
+        alias = "timestamp",
+        alias = "Timestamp"
+    )]
     date: String,
     #[serde(alias = "Open", alias = "open")]
     open: f64,
@@ -41,7 +46,11 @@ impl CsvDataSource {
     }
 
     /// Load all bars from the CSV file.
-    pub async fn load_all(&self, _symbol: &str, _timeframe: Timeframe) -> Result<Vec<Bar>, DataError> {
+    pub async fn load_all(
+        &self,
+        _symbol: &str,
+        _timeframe: Timeframe,
+    ) -> Result<Vec<Bar>, DataError> {
         self.load_from_path(&self.path)
     }
 

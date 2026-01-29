@@ -209,7 +209,7 @@ impl Strategy for MomentumStrategy {
                         strength: self.classify_strength(momentum, rsi),
                         price: bar.close,
                         timestamp: bar.timestamp,
-                        confidence: (momentum / 0.1).min(1.0).max(0.0),
+                        confidence: (momentum / 0.1).clamp(0.0, 1.0),
                         metadata: SignalMetadata {
                             strategy_name: self.name().to_string(),
                             indicators: [
@@ -242,7 +242,7 @@ impl Strategy for MomentumStrategy {
                         strength: self.classify_strength(momentum, rsi),
                         price: bar.close,
                         timestamp: bar.timestamp,
-                        confidence: (momentum.abs() / 0.1).min(1.0).max(0.0),
+                        confidence: (momentum.abs() / 0.1).clamp(0.0, 1.0),
                         metadata: SignalMetadata {
                             strategy_name: self.name().to_string(),
                             indicators: [
@@ -389,8 +389,10 @@ mod tests {
 
     #[test]
     fn test_config_validation() {
-        let mut config = MomentumConfig::default();
-        config.symbols = vec!["AAPL".to_string()];
+        let mut config = MomentumConfig {
+            symbols: vec!["AAPL".to_string()],
+            ..Default::default()
+        };
         assert!(config.validate().is_ok());
 
         config.fast_ema_period = 30;
@@ -419,7 +421,8 @@ mod tests {
         let prices: Vec<f64> = vec![
             100.0, 99.0, 101.0, 100.0, 99.5, 100.5, 100.0, 99.0, 100.0, 99.5, // consolidation
             101.0, 103.0, 105.0, 108.0, 112.0, 115.0, 119.0, 124.0, 128.0, 133.0, // breakout
-            138.0, 143.0, 148.0, 153.0, 158.0, 163.0, 168.0, 173.0, 178.0, 183.0, // strong trend
+            138.0, 143.0, 148.0, 153.0, 158.0, 163.0, 168.0, 173.0, 178.0,
+            183.0, // strong trend
         ];
 
         let series = create_test_series(&prices);

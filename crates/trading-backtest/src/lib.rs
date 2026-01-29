@@ -1,9 +1,9 @@
 //! Backtesting engine.
 
 mod engine;
-mod statistics;
 mod report;
+mod statistics;
 
-pub use engine::{BacktestEngine, BacktestConfig};
-pub use statistics::{BacktestStats, TradeRecord};
+pub use engine::{BacktestConfig, BacktestEngine};
 pub use report::BacktestReport;
+pub use statistics::{BacktestStats, TradeRecord};

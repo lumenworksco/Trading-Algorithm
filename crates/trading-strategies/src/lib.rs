@@ -9,11 +9,11 @@
 mod ma_crossover;
 mod mean_reversion;
 mod momentum;
-mod rsi_strategy;
 mod registry;
+mod rsi_strategy;
 
-pub use ma_crossover::{MACrossoverStrategy, MACrossoverConfig};
-pub use mean_reversion::{MeanReversionStrategy, MeanReversionConfig};
-pub use momentum::{MomentumStrategy, MomentumConfig};
-pub use rsi_strategy::{RsiStrategy, RsiConfig};
-pub use registry::{StrategyRegistry, StrategyInfo};
+pub use ma_crossover::{MACrossoverConfig, MACrossoverStrategy};
+pub use mean_reversion::{MeanReversionConfig, MeanReversionStrategy};
+pub use momentum::{MomentumConfig, MomentumStrategy};
+pub use registry::{StrategyInfo, StrategyRegistry};
+pub use rsi_strategy::{RsiConfig, RsiStrategy};

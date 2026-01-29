@@ -138,7 +138,12 @@ impl BacktestStats {
         // Annualized return (assuming daily bars)
         if !self.equity_curve.is_empty() {
             let days = self.equity_curve.len() as f64;
-            let total_return = self.total_return_pct.to_string().parse::<f64>().unwrap_or(0.0) / 100.0;
+            let total_return = self
+                .total_return_pct
+                .to_string()
+                .parse::<f64>()
+                .unwrap_or(0.0)
+                / 100.0;
             let annualized = ((1.0 + total_return).powf(252.0 / days) - 1.0) * 100.0;
             self.annualized_return_pct = Decimal::try_from(annualized).unwrap_or(Decimal::ZERO);
         }
@@ -165,8 +170,8 @@ impl BacktestStats {
 
         // Win rate
         if self.total_trades > 0 {
-            self.win_rate_pct = Decimal::from(self.winning_trades * 100)
-                / Decimal::from(self.total_trades);
+            self.win_rate_pct =
+                Decimal::from(self.winning_trades * 100) / Decimal::from(self.total_trades);
         }
 
         // Average win/loss
@@ -184,10 +189,14 @@ impl BacktestStats {
 
         // Sharpe ratio
         if !self.daily_returns.is_empty() {
-            let mean: f64 = self.daily_returns.iter().sum::<f64>() / self.daily_returns.len() as f64;
-            let variance: f64 = self.daily_returns.iter()
+            let mean: f64 =
+                self.daily_returns.iter().sum::<f64>() / self.daily_returns.len() as f64;
+            let variance: f64 = self
+                .daily_returns
+                .iter()
                 .map(|r| (r - mean).powi(2))
-                .sum::<f64>() / self.daily_returns.len() as f64;
+                .sum::<f64>()
+                / self.daily_returns.len() as f64;
             let std_dev = variance.sqrt();
 
             if std_dev > 0.0 {
@@ -195,15 +204,17 @@ impl BacktestStats {
             }
 
             // Sortino ratio (only downside deviation)
-            let negative_returns: Vec<f64> = self.daily_returns.iter()
+            let negative_returns: Vec<f64> = self
+                .daily_returns
+                .iter()
                 .filter(|&&r| r < 0.0)
                 .copied()
                 .collect();
 
             if !negative_returns.is_empty() {
-                let downside_variance: f64 = negative_returns.iter()
-                    .map(|r| r.powi(2))
-                    .sum::<f64>() / negative_returns.len() as f64;
+                let downside_variance: f64 =
+                    negative_returns.iter().map(|r| r.powi(2)).sum::<f64>()
+                        / negative_returns.len() as f64;
                 let downside_dev = downside_variance.sqrt();
 
                 if downside_dev > 0.0 {

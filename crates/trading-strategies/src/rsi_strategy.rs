@@ -319,8 +319,10 @@ mod tests {
 
     #[test]
     fn test_config_validation() {
-        let mut config = RsiConfig::default();
-        config.symbols = vec!["AAPL".to_string()];
+        let mut config = RsiConfig {
+            symbols: vec!["AAPL".to_string()],
+            ..Default::default()
+        };
         assert!(config.validate().is_ok());
 
         config.overbought = 30.0;

@@ -4,13 +4,13 @@
 //! and sell signals when the fast MA crosses below the slow MA.
 
 use serde::{Deserialize, Serialize};
+use trading_core::traits::Indicator;
 use trading_core::{
     error::StrategyError,
     traits::{Strategy, StrategyConfig, StrategyState},
     types::{BarSeries, Signal, SignalMetadata, SignalStrength, SignalType},
 };
 use trading_indicators::{Ema, Sma};
-use trading_core::traits::Indicator;
 
 /// Configuration for the MA Crossover strategy.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -269,8 +269,10 @@ mod tests {
 
     #[test]
     fn test_config_validation() {
-        let mut config = MACrossoverConfig::default();
-        config.symbols = vec!["AAPL".to_string()];
+        let mut config = MACrossoverConfig {
+            symbols: vec!["AAPL".to_string()],
+            ..Default::default()
+        };
         assert!(config.validate().is_ok());
 
         config.fast_period = 30;

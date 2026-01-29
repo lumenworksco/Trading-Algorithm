@@ -1,8 +1,8 @@
 //! Benchmarks for indicator implementations.
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
-use trading_indicators::{simd, Sma, Ema, Rsi};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use trading_core::traits::Indicator;
+use trading_indicators::{simd, Ema, Rsi, Sma};
 
 fn generate_test_data(size: usize) -> Vec<f64> {
     (0..size)
@@ -81,5 +81,11 @@ fn benchmark_std_dev(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, benchmark_sma, benchmark_ema, benchmark_rsi, benchmark_std_dev);
+criterion_group!(
+    benches,
+    benchmark_sma,
+    benchmark_ema,
+    benchmark_rsi,
+    benchmark_std_dev
+);
 criterion_main!(benches);

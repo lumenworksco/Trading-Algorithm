@@ -18,7 +18,10 @@ pub enum PositionSizingMethod {
     /// Risk-based (percentage of equity at risk per trade)
     RiskBased { risk_percent: Decimal },
     /// Kelly criterion
-    Kelly { win_rate: Decimal, avg_win_loss_ratio: Decimal },
+    Kelly {
+        win_rate: Decimal,
+        avg_win_loss_ratio: Decimal,
+    },
 }
 
 impl Default for PositionSizingMethod {
@@ -80,9 +83,7 @@ impl PositionSizer {
         let base_size = match &self.method {
             PositionSizingMethod::Fixed { shares } => *shares,
 
-            PositionSizingMethod::FixedDollar { amount } => {
-                *amount / current_price
-            }
+            PositionSizingMethod::FixedDollar { amount } => *amount / current_price,
 
             PositionSizingMethod::PercentEquity { percent } => {
                 let position_value = portfolio.equity * (*percent / dec!(100));
@@ -105,7 +106,10 @@ impl PositionSizer {
                 }
             }
 
-            PositionSizingMethod::Kelly { win_rate, avg_win_loss_ratio } => {
+            PositionSizingMethod::Kelly {
+                win_rate,
+                avg_win_loss_ratio,
+            } => {
                 // Kelly fraction = W - (1-W)/R
                 // where W = win rate, R = avg win/loss ratio
                 let kelly_fraction = *win_rate - (dec!(1) - *win_rate) / *avg_win_loss_ratio;
@@ -197,8 +201,10 @@ mod tests {
 
     #[test]
     fn test_risk_based() {
-        let sizer = PositionSizer::new(PositionSizingMethod::RiskBased { risk_percent: dec!(1) })
-            .without_signal_strength();
+        let sizer = PositionSizer::new(PositionSizingMethod::RiskBased {
+            risk_percent: dec!(1),
+        })
+        .without_signal_strength();
         let portfolio = create_portfolio(dec!(100000), dec!(100000));
         let signal = create_signal();
 

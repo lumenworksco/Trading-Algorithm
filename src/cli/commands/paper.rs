@@ -23,13 +23,15 @@ pub async fn run(args: PaperArgs, config_path: &Path) -> Result<()> {
     println!();
 
     // Parse timeframe
-    let timeframe: Timeframe = args.timeframe.parse()
+    let timeframe: Timeframe = args
+        .timeframe
+        .parse()
         .map_err(|e: String| anyhow::anyhow!(e))?;
 
     // Load Alpaca credentials: try config file first, then environment variables
     let config = if config_path.exists() {
-        let app_config = trading_config::load_config(config_path)
-            .context("Failed to load config file")?;
+        let app_config =
+            trading_config::load_config(config_path).context("Failed to load config file")?;
         let alpaca = &app_config.alpaca;
         // The config fields contain the actual keys (not env var names)
         AlpacaConfig::new(
@@ -46,11 +48,12 @@ pub async fn run(args: PaperArgs, config_path: &Path) -> Result<()> {
         warn!("Running in LIVE mode! Set ALPACA_PAPER=true for paper trading.");
     }
 
-    let broker = AlpacaBroker::new(config)
-        .context("Failed to create Alpaca broker")?;
+    let broker = AlpacaBroker::new(config).context("Failed to create Alpaca broker")?;
 
     // Verify connection
-    let account = broker.get_account().await
+    let account = broker
+        .get_account()
+        .await
         .context("Failed to connect to Alpaca API. Check your credentials.")?;
 
     println!("Connected to {}!", broker.name());
@@ -59,7 +62,9 @@ pub async fn run(args: PaperArgs, config_path: &Path) -> Result<()> {
     println!();
 
     // Check market status
-    let market_open = broker.is_market_open().await
+    let market_open = broker
+        .is_market_open()
+        .await
         .context("Failed to check market status")?;
 
     if !market_open {
@@ -117,13 +122,16 @@ pub async fn run(args: PaperArgs, config_path: &Path) -> Result<()> {
     let start = end - chrono::Duration::days(30); // Get 30 days of data
 
     for symbol in &symbols {
-        match broker.get_bars(
-            symbol,
-            timeframe_str,
-            &start.format("%Y-%m-%dT%H:%M:%SZ").to_string(),
-            &end.format("%Y-%m-%dT%H:%M:%SZ").to_string(),
-            Some(warmup_period * 2),
-        ).await {
+        match broker
+            .get_bars(
+                symbol,
+                timeframe_str,
+                &start.format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+                &end.format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+                Some(warmup_period * 2),
+            )
+            .await
+        {
             Ok(bars) => {
                 info!("Loaded {} bars for {}", bars.len(), symbol);
                 if let Some(series) = series_map.get_mut(symbol) {
@@ -166,25 +174,24 @@ pub async fn run(args: PaperArgs, config_path: &Path) -> Result<()> {
                 let now = chrono::Utc::now().timestamp_millis();
                 let price_f64 = price.to_string().parse::<f64>().unwrap_or(0.0);
                 let bar = trading_core::types::Bar::new(
-                    now,
-                    price_f64,
-                    price_f64,
-                    price_f64,
-                    price_f64,
-                    0.0,
+                    now, price_f64, price_f64, price_f64, price_f64, 0.0,
                 );
                 series.push(bar);
 
                 // Check for signals
                 if let Some(signal) = strategy.on_bar(series) {
-                    info!("Signal: {:?} {} @ ${}", signal.signal_type, symbol, signal.price);
+                    info!(
+                        "Signal: {:?} {} @ ${}",
+                        signal.signal_type, symbol, signal.price
+                    );
 
                     // Execute signal
                     let result = match signal.signal_type {
                         SignalType::Buy => {
                             // Calculate position size (simplified: use 10% of buying power)
                             let account = broker.get_account().await?;
-                            let position_value = account.buying_power * Decimal::from_str_exact("0.1").unwrap();
+                            let position_value =
+                                account.buying_power * Decimal::from_str_exact("0.1").unwrap();
                             let quantity = (position_value / price).round();
 
                             if quantity > Decimal::ZERO {
@@ -214,8 +221,10 @@ pub async fn run(args: PaperArgs, config_path: &Path) -> Result<()> {
 
                     match result {
                         Ok(order) => {
-                            info!("Order submitted: {} {} {} @ {:?}",
-                                order.side, order.quantity, order.symbol, order.limit_price);
+                            info!(
+                                "Order submitted: {} {} {} @ {:?}",
+                                order.side, order.quantity, order.symbol, order.limit_price
+                            );
                         }
                         Err(e) => {
                             error!("Failed to submit order: {}", e);
@@ -229,7 +238,8 @@ pub async fn run(args: PaperArgs, config_path: &Path) -> Result<()> {
         if iteration % 10 == 0 {
             match broker.get_account().await {
                 Ok(account) => {
-                    println!("[{}] Equity: ${:.2} | Positions: {}",
+                    println!(
+                        "[{}] Equity: ${:.2} | Positions: {}",
                         chrono::Utc::now().format("%H:%M:%S"),
                         account.equity,
                         account.positions.len()

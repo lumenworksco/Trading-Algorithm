@@ -5,7 +5,7 @@ use std::fmt;
 use std::str::FromStr;
 
 /// Timeframe for bars/candles.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum Timeframe {
     /// 1 minute bars
@@ -28,6 +28,7 @@ pub enum Timeframe {
     Hour4,
     /// Daily bars
     #[serde(rename = "1d")]
+    #[default]
     Daily,
     /// Weekly bars
     #[serde(rename = "1w")]
@@ -84,12 +85,6 @@ impl Timeframe {
             Timeframe::Weekly,
             Timeframe::Monthly,
         ]
-    }
-}
-
-impl Default for Timeframe {
-    fn default() -> Self {
-        Timeframe::Daily
     }
 }
 

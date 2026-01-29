@@ -4,11 +4,11 @@ use anyhow::{Context, Result};
 use rust_decimal::Decimal;
 use std::collections::HashMap;
 use std::path::Path;
+use tracing::info;
 use trading_backtest::{BacktestConfig, BacktestEngine};
 use trading_data::CsvDataSource;
 use trading_risk::RiskConfig;
 use trading_strategies::StrategyRegistry;
-use tracing::info;
 
 use crate::cli::BacktestArgs;
 
@@ -77,7 +77,10 @@ async fn load_data_from_csv(
     // If path is a file, load it for the first symbol
     if path.is_file() {
         let source = CsvDataSource::new(path.to_str().unwrap())?;
-        let symbol = symbols.first().cloned().unwrap_or_else(|| "DATA".to_string());
+        let symbol = symbols
+            .first()
+            .cloned()
+            .unwrap_or_else(|| "DATA".to_string());
         let bars = source
             .load_all(&symbol, trading_core::types::Timeframe::Daily)
             .await?;

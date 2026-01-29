@@ -7,7 +7,7 @@ mod signal;
 mod timeframe;
 
 pub use ohlcv::{Bar, BarSeries, PreciseBar};
-pub use order::{Order, OrderRequest, OrderStatus, OrderType, Side, TimeInForce, Fill};
-pub use position::{Position, Portfolio};
-pub use signal::{Signal, SignalType, SignalStrength, SignalMetadata};
+pub use order::{Fill, Order, OrderRequest, OrderStatus, OrderType, Side, TimeInForce};
+pub use position::{Portfolio, Position};
+pub use signal::{Signal, SignalMetadata, SignalStrength, SignalType};
 pub use timeframe::Timeframe;

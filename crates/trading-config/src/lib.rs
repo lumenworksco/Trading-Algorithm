@@ -2,7 +2,7 @@
 
 mod settings;
 
-pub use settings::{AppConfig, AlpacaConfig, RiskSettings, LoggingConfig};
+pub use settings::{AlpacaConfig, AppConfig, LoggingConfig, RiskSettings};
 
 use config::{Config, ConfigError, Environment, File};
 use std::path::Path;

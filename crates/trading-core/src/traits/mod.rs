@@ -1,11 +1,11 @@
 //! Core traits for the trading system.
 
-mod strategy;
-mod indicator;
 mod broker;
 mod data_source;
+mod indicator;
+mod strategy;
 
-pub use strategy::{Strategy, StrategyConfig, StrategyState};
-pub use indicator::{Indicator, StreamingIndicator, MultiOutputIndicator};
 pub use broker::Broker;
-pub use data_source::{DataSource, QuoteSource, Quote};
+pub use data_source::{DataSource, Quote, QuoteSource};
+pub use indicator::{Indicator, MultiOutputIndicator, StreamingIndicator};
+pub use strategy::{Strategy, StrategyConfig, StrategyState};

@@ -144,9 +144,7 @@ mod tests {
                 return vec![];
             }
             // Simple sum indicator for testing
-            data.windows(self.period)
-                .map(|w| w.iter().sum())
-                .collect()
+            data.windows(self.period).map(|w| w.iter().sum()).collect()
         }
 
         fn period(&self) -> usize {

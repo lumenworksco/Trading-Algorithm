@@ -4,7 +4,6 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use trading_core::types::{Bar, Timeframe};
 
-
 /// Simple in-memory data cache.
 pub struct DataCache {
     cache: HashMap<String, Vec<Bar>>,

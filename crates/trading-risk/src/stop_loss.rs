@@ -3,7 +3,7 @@
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
-use trading_core::types::{Side, Position};
+use trading_core::types::{Position, Side};
 
 /// Stop-loss calculation method.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -64,11 +64,7 @@ impl StopLossManager {
     }
 
     /// Calculate stop-loss price for a new position.
-    pub fn calculate_stop_price(
-        &self,
-        entry_price: Decimal,
-        side: Side,
-    ) -> Option<Decimal> {
+    pub fn calculate_stop_price(&self, entry_price: Decimal, side: Side) -> Option<Decimal> {
         match &self.method {
             StopLossMethod::FixedPercent { percent } => {
                 let offset = entry_price * (*percent / dec!(100));
@@ -78,22 +74,18 @@ impl StopLossManager {
                 }
             }
 
-            StopLossMethod::Atr { multiplier } => {
-                self.current_atr.map(|atr| {
-                    let offset = atr * *multiplier;
-                    match side {
-                        Side::Buy => entry_price - offset,
-                        Side::Sell => entry_price + offset,
-                    }
-                })
-            }
-
-            StopLossMethod::FixedDollar { amount } => {
+            StopLossMethod::Atr { multiplier } => self.current_atr.map(|atr| {
+                let offset = atr * *multiplier;
                 match side {
-                    Side::Buy => Some(entry_price - *amount),
-                    Side::Sell => Some(entry_price + *amount),
+                    Side::Buy => entry_price - offset,
+                    Side::Sell => entry_price + offset,
                 }
-            }
+            }),
+
+            StopLossMethod::FixedDollar { amount } => match side {
+                Side::Buy => Some(entry_price - *amount),
+                Side::Sell => Some(entry_price + *amount),
+            },
 
             StopLossMethod::TrailingPercent { percent } => {
                 // Initial stop same as fixed percent
@@ -104,15 +96,13 @@ impl StopLossManager {
                 }
             }
 
-            StopLossMethod::TrailingAtr { multiplier } => {
-                self.current_atr.map(|atr| {
-                    let offset = atr * *multiplier;
-                    match side {
-                        Side::Buy => entry_price - offset,
-                        Side::Sell => entry_price + offset,
-                    }
-                })
-            }
+            StopLossMethod::TrailingAtr { multiplier } => self.current_atr.map(|atr| {
+                let offset = atr * *multiplier;
+                match side {
+                    Side::Buy => entry_price - offset,
+                    Side::Sell => entry_price + offset,
+                }
+            }),
         }
     }
 
@@ -165,14 +155,18 @@ impl StopLossManager {
     /// Check if stop-loss is triggered.
     pub fn is_triggered(&self, stop_price: Decimal, current_price: Decimal, side: Side) -> bool {
         match side {
-            Side::Buy => current_price <= stop_price,  // Long: triggered if price falls to stop
+            Side::Buy => current_price <= stop_price, // Long: triggered if price falls to stop
             Side::Sell => current_price >= stop_price, // Short: triggered if price rises to stop
         }
     }
 
     /// Create a stop-loss order for a position.
     pub fn create_stop_order(&self, position: &Position) -> Option<StopLossOrder> {
-        let side = if position.is_long() { Side::Buy } else { Side::Sell };
+        let side = if position.is_long() {
+            Side::Buy
+        } else {
+            Side::Sell
+        };
         let stop_price = self.calculate_stop_price(position.avg_entry_price, side)?;
 
         let is_trailing = matches!(
@@ -219,7 +213,9 @@ mod tests {
 
     #[test]
     fn test_atr_stop() {
-        let mut manager = StopLossManager::new(StopLossMethod::Atr { multiplier: dec!(2) });
+        let mut manager = StopLossManager::new(StopLossMethod::Atr {
+            multiplier: dec!(2),
+        });
         manager.update_atr(dec!(5)); // ATR = 5
 
         let stop = manager.calculate_stop_price(dec!(100), Side::Buy).unwrap();

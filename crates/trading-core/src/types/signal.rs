@@ -49,12 +49,13 @@ impl std::fmt::Display for SignalType {
 }
 
 /// Signal strength/conviction level.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum SignalStrength {
     /// Weak signal - low conviction
     Weak,
     /// Moderate signal - medium conviction
+    #[default]
     Moderate,
     /// Strong signal - high conviction
     Strong,
@@ -68,12 +69,6 @@ impl SignalStrength {
             SignalStrength::Moderate => 1.0,
             SignalStrength::Strong => 1.5,
         }
-    }
-}
-
-impl Default for SignalStrength {
-    fn default() -> Self {
-        SignalStrength::Moderate
     }
 }
 

@@ -129,7 +129,10 @@ impl Wma {
         assert!(period > 0, "Period must be greater than 0");
         // Sum of weights: 1 + 2 + ... + n = n(n+1)/2
         let weights_sum = (period * (period + 1)) as f64 / 2.0;
-        Self { period, weights_sum }
+        Self {
+            period,
+            weights_sum,
+        }
     }
 }
 
@@ -262,9 +265,9 @@ mod tests {
 
         assert_eq!(result.len(), 3);
         assert!((result[0] - 2.0).abs() < 1e-10); // Initial SMA
-        // EMA = price * mult + prev_ema * (1 - mult)
-        // mult = 2/(3+1) = 0.5
-        // result[1] = 4 * 0.5 + 2 * 0.5 = 3.0
+                                                  // EMA = price * mult + prev_ema * (1 - mult)
+                                                  // mult = 2/(3+1) = 0.5
+                                                  // result[1] = 4 * 0.5 + 2 * 0.5 = 3.0
         assert!((result[1] - 3.0).abs() < 1e-10);
     }
 

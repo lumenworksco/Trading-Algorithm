@@ -1,7 +1,7 @@
 //! Broker trait definition.
 
 use crate::error::BrokerError;
-use crate::types::{Order, OrderRequest, Position, Portfolio};
+use crate::types::{Order, OrderRequest, Portfolio, Position};
 use async_trait::async_trait;
 
 /// Trait for broker integrations.
